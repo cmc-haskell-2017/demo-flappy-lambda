@@ -30,7 +30,7 @@ updateGates dt ((offset, height) : gates)
 
 -- | Расстояние между воротами.
 defaultOffset :: Offset
-defaultOffset = 200
+defaultOffset = 300
 
 -- | Диапазон высот ворот.
 gateHeightRange :: (Height, Height)
@@ -76,7 +76,11 @@ playerOffset = screenLeft + 200
 
 -- | Ускорение свободного падения.
 gravity :: Float
-gravity = -100
+gravity = -800
+
+-- | Скорость после "подпрыгивания".
+bumpSpeed :: Float
+bumpSpeed = 300
 
 -- | Инициализировать игровую вселенную, используя генератор случайных значений.
 initUniverse :: StdGen -> Universe
@@ -146,7 +150,18 @@ screenLeft = - fromIntegral screenWidth / 2
 
 -- | Обработчик событий игры.
 handleUniverse :: Event -> Universe -> Universe
+handleUniverse (EventKey (SpecialKey KeySpace) Down _ _) = bumpPlayer
 handleUniverse _ = id
+
+bumpPlayer :: Universe -> Universe
+bumpPlayer u = u
+  { universePlayer = bump (universePlayer u)
+  }
+  where
+    bump player
+      | playerSpeed player < 0
+          = player { playerSpeed = bumpSpeed }
+      | otherwise = player
 
 -- | Обновить состояние игровой вселенной.
 updateUniverse :: Float -> Universe -> Universe
