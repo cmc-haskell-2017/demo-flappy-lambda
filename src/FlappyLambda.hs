@@ -60,17 +60,44 @@ screenHeight = 450
 
 -- | Модель игровой вселенной.
 data Universe = Universe
-  { universeGates :: [Gate]   -- ^ Ворота игровой вселенной.
+  { universeGates   :: [Gate]   -- ^ Ворота игровой вселенной.
+  , universePlayer  :: Player   -- ^ Игрок.
   }
+
+-- | Игрок — символ лямбда.
+data Player = Player
+  { playerHeight :: Height  -- ^ Положение игрока по вертикали.
+  , playerSpeed  :: Float   -- ^ Скорость падения игрока.
+  }
+
+-- | Положение игрока по горизонтали.
+playerOffset :: Offset
+playerOffset = screenLeft + 200
+
+-- | Ускорение свободного падения.
+gravity :: Float
+gravity = -100
 
 -- | Инициализировать игровую вселенную, используя генератор случайных значений.
 initUniverse :: StdGen -> Universe
 initUniverse g = Universe
-  { universeGates = initGates g }
+  { universeGates = initGates g
+  , universePlayer = initPlayer
+  }
+
+-- | Начальное состояние игрока.
+initPlayer :: Player
+initPlayer = Player
+  { playerHeight = 0
+  , playerSpeed = 0
+  }
 
 -- | Отобразить игровую вселенную.
 drawUniverse :: Universe -> Picture
-drawUniverse u = drawGates (universeGates u)
+drawUniverse u = pictures
+  [ drawGates (universeGates u)
+  , drawPlayer (universePlayer u)
+  ]
 
 -- | Отобразить все ворота игровой вселенной, вмещающиеся в экран.
 drawGates :: [Gate] -> Picture
@@ -95,6 +122,12 @@ drawGate (offset, height) = color white (translate offset height gate)
     s = gateSize / 2
     h = fromIntegral screenHeight
 
+-- | Нарисовать игрока.
+drawPlayer :: Player -> Picture
+drawPlayer player = color white (translate 0 (playerHeight player) (drawLambda playerSpeed))
+  where
+    drawLambda s = thickCircle 10 10
+
 -- | Ширина стенок ворот.
 gateWidth :: Float
 gateWidth = 20
@@ -118,4 +151,12 @@ handleUniverse _ = id
 -- | Обновить состояние игровой вселенной.
 updateUniverse :: Float -> Universe -> Universe
 updateUniverse dt u = u
-  { universeGates = updateGates dt (universeGates u) }
+  { universeGates = updateGates dt (universeGates u)
+  , universePlayer = updatePlayer dt (universePlayer u) }
+
+-- | Обновить состояние игрока.
+updatePlayer :: Float -> Player -> Player
+updatePlayer dt player = player
+  { playerHeight = playerHeight player + dt * playerSpeed player
+  , playerSpeed = playerSpeed player + dt * gravity
+  }
