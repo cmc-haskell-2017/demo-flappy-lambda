@@ -17,6 +17,17 @@ initGates :: StdGen -> [Gate]
 initGates g = map initGate
   (randomRs gateHeightRange g)
 
+-- | Обновить ворота игровой вселенной.
+updateGates :: Float -> [Gate] -> [Gate]
+updateGates _ [] = []
+updateGates dt ((offset, height) : gates)
+  | dx > pos  = updateGates dt' gates
+  | otherwise = (offset - dx, height) : gates
+  where
+    pos = offset - screenLeft + gateWidth
+    dx  = dt * speed
+    dt' = dt - offset / speed
+
 -- | Расстояние между воротами.
 defaultOffset :: Offset
 defaultOffset = 200
@@ -24,6 +35,10 @@ defaultOffset = 200
 -- | Диапазон высот ворот.
 gateHeightRange :: (Height, Height)
 gateHeightRange = (-200, 200)
+
+-- | Скорость движения игрока по вселенной (в пикселях в секунду).
+speed :: Float
+speed = 100
 
 -- | Запустить игру «Flappy Lambda».
 runFlappyLambda :: IO ()
@@ -62,7 +77,7 @@ drawGates :: [Gate] -> Picture
 drawGates = drawGates' screenRight
   where
     drawGates' r ((offset, height):gates)
-      | offset < r = pictures
+      | offset < r + gateWidth = pictures
           [ drawGate (offset, height)
           , translate offset 0 (drawGates' (r - offset) gates)
           ]
@@ -90,7 +105,11 @@ gateSize = 100
 
 -- | Положение правого края экрана.
 screenRight :: Offset
-screenRight = 400
+screenRight = fromIntegral screenWidth / 2
+
+-- | Положение левого края экрана.
+screenLeft :: Offset
+screenLeft = - fromIntegral screenWidth / 2
 
 -- | Обработчик событий игры.
 handleUniverse :: Event -> Universe -> Universe
@@ -98,4 +117,5 @@ handleUniverse _ = id
 
 -- | Обновить состояние игровой вселенной.
 updateUniverse :: Float -> Universe -> Universe
-updateUniverse _ = id
+updateUniverse dt u = u
+  { universeGates = updateGates dt (universeGates u) }
