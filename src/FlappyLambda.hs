@@ -130,14 +130,15 @@ drawGate (offset, height) = color white (translate offset height gate)
 
 -- | Нарисовать игрока.
 drawPlayer :: Player -> Picture
-drawPlayer player = color orange (translate 0 (playerHeight player) (drawLambda playerSpeed))
+drawPlayer player = color orange (translate 0 (playerHeight player) drawLambda)
   where
-    drawLambda s = scale 0.03 0.03 $ pictures
+    tilt = rotate (0.3 * (atan2 speed (playerSpeed player) * 180 / pi - 90))
+    drawLambda = tilt (scale 0.03 0.03 (pictures
       [ polygon [ (-885, -770), (-525, -770), (50, 50), (-140, 370) ]
       , polygon [ (335, -865), (560, -510), (-35, 970), (-240, 675) ]
       , polygon [ (-35, 970), (-485, 970), (-485, 675), (-240, 675) ]
       , polygon [ (355, -855), (900, -690), (805, -435), (510, -510) ]
-      ]
+      ]))
 
 -- | Ширина стенок ворот.
 gateWidth :: Float
