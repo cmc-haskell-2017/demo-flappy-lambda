@@ -34,7 +34,9 @@ defaultOffset = 300
 
 -- | Диапазон высот ворот.
 gateHeightRange :: (Height, Height)
-gateHeightRange = (-200, 200)
+gateHeightRange = (-h, h)
+  where
+    h = (fromIntegral screenHeight - gateWidth) / 2
 
 -- | Скорость движения игрока по вселенной (в пикселях в секунду).
 speed :: Float
@@ -76,11 +78,11 @@ playerOffset = screenLeft + 200
 
 -- | Ускорение свободного падения.
 gravity :: Float
-gravity = -800
+gravity = -1000
 
 -- | Скорость после "подпрыгивания".
 bumpSpeed :: Float
-bumpSpeed = 300
+bumpSpeed = 400
 
 -- | Инициализировать игровую вселенную, используя генератор случайных значений.
 initUniverse :: StdGen -> Universe
@@ -128,17 +130,22 @@ drawGate (offset, height) = color white (translate offset height gate)
 
 -- | Нарисовать игрока.
 drawPlayer :: Player -> Picture
-drawPlayer player = color white (translate 0 (playerHeight player) (drawLambda playerSpeed))
+drawPlayer player = color orange (translate 0 (playerHeight player) (drawLambda playerSpeed))
   where
-    drawLambda s = thickCircle 10 10
+    drawLambda s = scale 0.03 0.03 $ pictures
+      [ polygon [ (-885, -770), (-525, -770), (50, 50), (-140, 370) ]
+      , polygon [ (335, -865), (560, -510), (-35, 970), (-240, 675) ]
+      , polygon [ (-35, 970), (-485, 970), (-485, 675), (-240, 675) ]
+      , polygon [ (355, -855), (900, -690), (805, -435), (510, -510) ]
+      ]
 
 -- | Ширина стенок ворот.
 gateWidth :: Float
-gateWidth = 20
+gateWidth = 40
 
 -- | Размер проёма ворот.
 gateSize :: Float
-gateSize = 100
+gateSize = 150
 
 -- | Положение правого края экрана.
 screenRight :: Offset
