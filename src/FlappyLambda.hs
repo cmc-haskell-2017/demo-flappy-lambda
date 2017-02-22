@@ -1,6 +1,8 @@
 module FlappyLambda where
 
 import System.Random
+import Graphics.Gloss.Data.Vector
+import Graphics.Gloss.Geometry.Line
 import Graphics.Gloss.Interface.Pure.Game
 
 type Height = Float
@@ -141,15 +143,19 @@ drawGate (offset, height) = color white (translate offset height gate)
 
 -- | Нарисовать игрока.
 drawPlayer :: Player -> Picture
-drawPlayer player = color orange (translate 0 (playerHeight player) drawLambda)
+drawPlayer player = color orange drawLambda
   where
-    tilt = rotate (0.3 * (atan2 speed (playerSpeed player) * 180 / pi - 90))
-    drawLambda = tilt (scale 0.03 0.03 (pictures
-      [ polygon [ (-885, -770), (-525, -770), (50, 50), (-140, 370) ]
-      , polygon [ (335, -865), (560, -510), (-35, 970), (-240, 675) ]
-      , polygon [ (-35, 970), (-485, 970), (-485, 675), (-240, 675) ]
-      , polygon [ (355, -855), (900, -690), (805, -435), (510, -510) ]
-      ]))
+    drawLambda = pictures (map polygon (playerPolygons player))
+
+-- | Многоугольники, определяющие игрока (символ лямбда).
+playerPolygons :: Player -> [Path]
+playerPolygons player = map (map move)
+  [ [ (-885, -770), (-525, -770), (50, 50), (-140, 370) ]
+  , [ (335, -865), (560, -510), (-35, 970), (-240, 675) ]
+  , [ (-35, 970), (-485, 970), (-485, 675), (-240, 675) ]
+  , [ (355, -855), (900, -690), (805, -435), (510, -510) ] ]
+  where
+    move (x, y) = (0, playerHeight player) + mulSV 0.03 (x, y)
 
 -- | Нарисовать счёт в левом верхнем углу экрана.
 drawScore :: Score -> Picture
@@ -242,3 +248,26 @@ updatePlayer dt player = player
   where
     h = fromIntegral screenHeight / 2
 
+-- | Сталкивается ли игрок с воротами?
+collides :: Player -> Gate -> Bool
+collides player gate = or
+  [ polygonBoxCollides polygon box
+  | polygon <- playerPolygons player
+  , box     <- gateBoxes gate ]
+
+-- | Упрощённая проверка на пересечение многоугольников.
+polygonBoxCollides :: Path -> (Point, Point) -> Bool
+polygonBoxCollides xs (lb, rt) = or
+  [ not (segClearsBox p1 p2 lb rt)
+  | (p1, p2) <- zip xs (tail (cycle xs)) ]
+
+-- | Многоугольники ворот.
+gateBoxes :: Gate -> [(Point, Point)]
+gateBoxes (x, y)
+  = [ ((x - w, y + s), (x + w, y + s + h))
+    , ((x - w, y - s - h), (x + w, y - s))
+    ]
+  where
+    w = gateWidth / 2
+    s = gateSize / 2
+    h = fromIntegral screenHeight
