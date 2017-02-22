@@ -7,6 +7,11 @@ type Height = Float
 type Offset = Float
 type Gate   = (Offset, Height)
 
+-- | Сталкивается ли игрок с любыми из
+-- бесконечного списка ворот?
+collision :: Player -> [Gate] -> Bool
+collision _ _ = False
+
 -- | Инициализировать одни ворота.
 initGate :: Height -> Gate
 initGate h = (defaultOffset, h)
@@ -198,11 +203,13 @@ absoluteGates = go 0
 
 -- | Обновить состояние игровой вселенной.
 updateUniverse :: Float -> Universe -> Universe
-updateUniverse dt u = u
-  { universeGates  = updateGates  dt (universeGates  u)
-  , universePlayer = updatePlayer dt (universePlayer u)
-  , universeScore  = universeScore u + scoreGates (universeGates u)
-  }
+updateUniverse dt u
+  | isGameOver u = resetUniverse u
+  | otherwise = u
+      { universeGates  = updateGates  dt (universeGates  u)
+      , universePlayer = updatePlayer dt (universePlayer u)
+      , universeScore  = universeScore u + scoreGates (universeGates u)
+      }
   where
     scoreGates = length . takeWhile isPast . dropWhile wasPast . absoluteGates
     -- ворота окажутся позади игрока в этом кадре?
@@ -210,10 +217,28 @@ updateUniverse dt u = u
     -- ворота уже были позади игрока в предыдущем кадре?
     wasPast (offset, _) = offset + gateWidth / 2 < 0
 
+-- | Сбросить игру (начать с начала со случайными воротами).
+resetUniverse :: Universe -> Universe
+resetUniverse u = u
+  { universeGates  = tail (universeGates u)
+  , universePlayer = initPlayer
+  , universeScore  = 0
+  }
+
+-- | Конец игры?
+isGameOver :: Universe -> Bool
+isGameOver u = playerBelowFloor || playerHitsGate
+  where
+    playerHitsGate   = collision (universePlayer u) (universeGates u)
+    playerBelowFloor = playerHeight (universePlayer u) < - fromIntegral screenHeight
+
 -- | Обновить состояние игрока.
+-- Игрок не может прыгнуть выше потолка.
 updatePlayer :: Float -> Player -> Player
 updatePlayer dt player = player
-  { playerHeight = playerHeight player + dt * playerSpeed player
-  , playerSpeed  = playerSpeed  player + dt * gravity
+  { playerHeight = min h (playerHeight player + dt * playerSpeed player)
+  , playerSpeed  = playerSpeed player + dt * gravity
   }
+  where
+    h = fromIntegral screenHeight / 2
 
