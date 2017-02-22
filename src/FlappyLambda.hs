@@ -60,10 +60,14 @@ screenWidth = 800
 screenHeight :: Int
 screenHeight = 450
 
+-- | Счёт.
+type Score = Int
+
 -- | Модель игровой вселенной.
 data Universe = Universe
   { universeGates   :: [Gate]   -- ^ Ворота игровой вселенной.
   , universePlayer  :: Player   -- ^ Игрок.
+  , universeScore   :: Score    -- ^ Счёт (кол-во успешно пройденных ворот).
   }
 
 -- | Игрок — символ лямбда.
@@ -87,22 +91,24 @@ bumpSpeed = 400
 -- | Инициализировать игровую вселенную, используя генератор случайных значений.
 initUniverse :: StdGen -> Universe
 initUniverse g = Universe
-  { universeGates = initGates g
+  { universeGates  = initGates g
   , universePlayer = initPlayer
+  , universeScore  = 0
   }
 
 -- | Начальное состояние игрока.
 initPlayer :: Player
 initPlayer = Player
   { playerHeight = 0
-  , playerSpeed = 0
+  , playerSpeed  = 0
   }
 
 -- | Отобразить игровую вселенную.
 drawUniverse :: Universe -> Picture
 drawUniverse u = pictures
-  [ drawGates (universeGates u)
+  [ drawGates  (universeGates u)
   , drawPlayer (universePlayer u)
+  , drawScore  (universeScore u)
   ]
 
 -- | Отобразить все ворота игровой вселенной, вмещающиеся в экран.
@@ -140,6 +146,17 @@ drawPlayer player = color orange (translate 0 (playerHeight player) drawLambda)
       , polygon [ (355, -855), (900, -690), (805, -435), (510, -510) ]
       ]))
 
+-- | Нарисовать счёт в левом верхнем углу экрана.
+drawScore :: Score -> Picture
+drawScore score = translate (-w) h (scale 30 30 (pictures
+  [ color white (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
+  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
+  , translate 2 (-1.5) (scale 0.01 0.01 (color red (text (show score))))  -- красный счёт
+  ]))
+  where
+    w = fromIntegral screenWidth  / 2
+    h = fromIntegral screenHeight / 2
+
 -- | Ширина стенок ворот.
 gateWidth :: Float
 gateWidth = 40
@@ -161,6 +178,7 @@ handleUniverse :: Event -> Universe -> Universe
 handleUniverse (EventKey (SpecialKey KeySpace) Down _ _) = bumpPlayer
 handleUniverse _ = id
 
+-- | Подпрыгнуть (игроком), если можно.
 bumpPlayer :: Universe -> Universe
 bumpPlayer u = u
   { universePlayer = bump (universePlayer u)
@@ -171,15 +189,31 @@ bumpPlayer u = u
           = player { playerSpeed = bumpSpeed }
       | otherwise = player
 
+-- | Рассчитать абсолютное положение ворот.
+absoluteGates :: [Gate] -> [Gate]
+absoluteGates = go 0
+  where
+    go _ [] = []
+    go s ((o, h) : gs) = (o + s, h) : go (s + o) gs
+
 -- | Обновить состояние игровой вселенной.
 updateUniverse :: Float -> Universe -> Universe
 updateUniverse dt u = u
-  { universeGates = updateGates dt (universeGates u)
-  , universePlayer = updatePlayer dt (universePlayer u) }
+  { universeGates  = updateGates  dt (universeGates  u)
+  , universePlayer = updatePlayer dt (universePlayer u)
+  , universeScore  = universeScore u + scoreGates (universeGates u)
+  }
+  where
+    scoreGates = length . takeWhile isPast . dropWhile wasPast . absoluteGates
+    -- ворота окажутся позади игрока в этом кадре?
+    isPast (offset, _) = offset + gateWidth / 2 - dt * speed < 0
+    -- ворота уже были позади игрока в предыдущем кадре?
+    wasPast (offset, _) = offset + gateWidth / 2 < 0
 
 -- | Обновить состояние игрока.
 updatePlayer :: Float -> Player -> Player
 updatePlayer dt player = player
   { playerHeight = playerHeight player + dt * playerSpeed player
-  , playerSpeed = playerSpeed player + dt * gravity
+  , playerSpeed  = playerSpeed  player + dt * gravity
   }
+
