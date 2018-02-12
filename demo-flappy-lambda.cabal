@@ -14,6 +14,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
+  ghc-options:         -Wall -fno-warn-type-defaults
   exposed-modules:     FlappyLambda
   build-depends:       base >= 4.7 && < 5
                      , gloss
@@ -23,7 +24,7 @@ library
 executable demo-flappy-lambda
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , demo-flappy-lambda
   default-language:    Haskell2010
