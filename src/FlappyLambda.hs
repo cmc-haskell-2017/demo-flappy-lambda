@@ -223,9 +223,9 @@ collision _ _ = False -- реализуйте эту функцию самост
 -- | Сталкивается ли игрок с воротами?
 collides :: Player -> Gate -> Bool
 collides player gate = or
-  [ polygonBoxCollides polygon box
-  | polygon <- playerPolygons player
-  , box     <- gateBoxes gate ]
+  [ polygonBoxCollides poly box
+  | poly <- playerPolygons player
+  , box  <- gateBoxes gate ]
 
 -- | Упрощённая проверка на пересечение многоугольников.
 polygonBoxCollides :: Path -> (Point, Point) -> Bool
