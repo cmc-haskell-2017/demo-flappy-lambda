@@ -1,9 +1,9 @@
 module FlappyLambda where
 
-import System.Random
-import Graphics.Gloss.Data.Vector
-import Graphics.Gloss.Geometry.Line
-import Graphics.Gloss.Interface.Pure.Game
+import           Graphics.Gloss.Data.Vector
+import           Graphics.Gloss.Geometry.Line
+import           Graphics.Gloss.Interface.Pure.Game
+import           System.Random
 
 -- | Запустить игру «Flappy Lambda».
 runFlappyLambda :: IO ()
@@ -39,9 +39,9 @@ data Player = Player
 
 -- | Модель игровой вселенной.
 data Universe = Universe
-  { universeGates   :: [Gate]   -- ^ Ворота игровой вселенной.
-  , universePlayer  :: Player   -- ^ Игрок.
-  , universeScore   :: Score    -- ^ Счёт (кол-во успешно пройденных ворот).
+  { universeGates  :: [Gate]   -- ^ Ворота игровой вселенной.
+  , universePlayer :: Player   -- ^ Игрок.
+  , universeScore  :: Score    -- ^ Счёт (кол-во успешно пройденных ворот).
   }
 
 -- | Инициализировать игровую вселенную, используя генератор случайных значений.
@@ -73,7 +73,7 @@ initGates g = map initGate
 absoluteGates :: [Gate] -> [Gate]
 absoluteGates = go 0
   where
-    go _ [] = []
+    go _ []            = []
     go s ((o, h) : gs) = (o + s, h) : go (s + o) gs
 
 -- =========================================
@@ -126,7 +126,7 @@ playerPolygons player = map (map move)
   , [ (-35, 970), (-485, 970), (-485, 675), (-240, 675) ]
   , [ (355, -855), (900, -690), (805, -435), (510, -510) ] ]
   where
-    move (x, y) = (0, playerHeight player) + mulSV 0.03 (x, y)
+    move (x, y) = (0.03 * x, playerHeight player + 0.03 * y)
 
 -- | Многоугольники ворот.
 gateBoxes :: Gate -> [(Point, Point)]
@@ -146,7 +146,7 @@ gateBoxes (x, y)
 -- | Обработчик событий игры.
 handleUniverse :: Event -> Universe -> Universe
 handleUniverse (EventKey (SpecialKey KeySpace) Down _ _) = bumpPlayer
-handleUniverse _ = id
+handleUniverse _                                         = id
 
 -- | Подпрыгнуть (игроком), если можно.
 bumpPlayer :: Universe -> Universe
